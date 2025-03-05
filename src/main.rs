@@ -29,7 +29,8 @@ fn main() -> std::io::Result<()> {
                 let vendor_completions_dir = dirs::data_dir()
                     .expect("data dir")
                     .join("fish/vendor_completions.d");
-                let vendor_completions_path = vendor_completions_dir.join("vdl.fish");
+                let vendor_completions_path =
+                    vendor_completions_dir.join(format!("{NAME}.fish"));
                 if !vendor_completions_dir.exists() {
                     fs::create_dir_all(&vendor_completions_dir)?;
                 }
