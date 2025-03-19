@@ -10,6 +10,10 @@ struct Args {
     #[arg(short, long)]
     newline: bool,
 
+    /// Additional characters to trim from the input.
+    #[arg(short, long)]
+    additional_chars: Vec<char>,
+
     /// Write shell completions and exit
     #[arg(long)]
     completions: bool,
@@ -45,6 +49,15 @@ fn main() -> std::io::Result<()> {
     } else {
         let mut stdin = vec![];
         std::io::stdin().read_to_end(&mut stdin)?;
+        let mut stdin = stdin.trim_ascii();
+        if !args.additional_chars.is_empty() {
+            let additional = args
+                .additional_chars
+                .into_iter()
+                .filter_map(|x| u8::try_from(x).ok())
+                .collect::<Vec<_>>();
+            stdin = trim_end(trim_start(stdin, &additional), &additional);
+        }
         let mut stdout = std::io::stdout();
         stdout.write_all(stdin.trim_ascii())?;
         if args.newline {
@@ -53,4 +66,31 @@ fn main() -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+pub fn trim_start<'a>(mut bytes: &'a [u8], id: &[u8]) -> &'a [u8] {
+    // Note: A pattern matching based approach (instead of indexing) allows
+    // making the function const.
+
+    while let [first, rest @ ..] = bytes {
+        if id.contains(first) {
+            bytes = rest;
+        } else {
+            break;
+        }
+    }
+    bytes
+}
+
+pub fn trim_end<'a>(mut bytes: &'a [u8], id: &[u8]) -> &'a [u8] {
+    // Note: A pattern matching based approach (instead of indexing) allows
+    // making the function const.
+    while let [rest @ .., last] = bytes {
+        if id.contains(last) {
+            bytes = rest;
+        } else {
+            break;
+        }
+    }
+    bytes
 }
